@@ -180,11 +180,7 @@ function idleAnimationForStance(stanceId, phase, base) {
     case "stern":
       return { ...base, eyes: "eyes_serious_angry", mouth: "mouth_chevron_serious" };
     case "tired":
-      return {
-        ...base,
-        eyes: phase === 6 || phase === 7 ? "eyes_soft_closed" : "eyes_sleepy_flat",
-        mouth: "mouth_flat_neutral",
-      };
+      return { ...base, eyes: "eyes_sleepy_flat", mouth: "mouth_flat_neutral" };
     case "sad":
       return { ...base, eyes: "eyes_teary", mouth: "mouth_small_frown" };
     case "angry":

@@ -153,7 +153,7 @@ fn idle_animation_for_stance(
             "ears_style_sharp",
         ),
         Stance::Tired => (
-            if phase == 6 || phase == 7 { "eyes_soft_closed" } else { "eyes_sleepy_flat" },
+            "eyes_sleepy_flat",
             "mouth_flat_neutral",
             "ears_style_rounded",
         ),
