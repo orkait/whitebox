@@ -1,32 +1,46 @@
 # whitebox
 
-Whitebox is the surface layer.
+Whitebox is the expression and rendering layer.
 
-It is the visible output plane of the system.
+It is the layer the agent uses when it wants to express itself in a visible way.
 
 ## Role In The Architecture
 
-This layer exists so the agent can give life which humans can see with visuals.
+Whitebox is not only a generic output plane.
 
-The architecture currently describes this surface as:
+It is the renderer/state layer for visible expression.
 
-- Canvas
-- Terminal
-- NxN pixel Asciii Box
+If the agent wants to speak, text to speech is how it does that.
+If the agent wants to express through rendered output, Whitebox is the layer it
+uses.
 
-It outputs to screen.
+## Current Surface
 
-## Visibility Function
+Whitebox currently runs as a Tauri desktop surface.
 
-Whitebox is where the system becomes visible to humans.
-It is the presentation surface for agent output and visual presence.
+The Rust crate in this repo is the embodiment core.
+The Tauri shell renders that state in a desktop window and sends actions back into the core.
+
+## Why It Exists
+
+Whitebox exists so the agent can:
+
+- render visible state
+- present screen-based output
+- express through visual surfaces
+- give life that humans can see
 
 ## Related Interfaces
 
-The architecture also mentions:
+- text to speech handles spoken output
+- speech to text handles spoken input
+- Whitebox handles visible and rendered expression
 
-- text to speech
-- speed to text
+## Development
 
-Those interaction modes sit close to the visible surface layer even if they are
-not yet split into a separate repo in this layout.
+Install JavaScript dependencies and run the desktop shell:
+
+```bash
+npm install
+npm run tauri dev
+```
