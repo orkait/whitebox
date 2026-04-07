@@ -14,7 +14,7 @@
 
 Whitebox is the **Surface Plane** in the orkait architecture. When the agent wants to be seen or heard, this is the layer it reaches for.
 
-It does not think, plan, or remember. It just exists — rendering a layered cat avatar, managing voice sessions, and exposing a body API so the agent can express itself without caring how any of it works under the hood.
+It does not think, plan, or remember. It just exists: rendering a layered cat avatar, managing voice sessions, and exposing a body API so the agent can express itself without caring how any of it works under the hood.
 
 ## 📐 Where it sits
 
@@ -25,7 +25,7 @@ Master Agent
     └── Surface Plane (whitebox)   <- this repo
 ```
 
-The agent calls `speak("hello")`. Whitebox handles the rest — picking the right TTS backend, animating the mouth, firing a `SpeakStarted` event, and cleaning up when it's done.
+The agent calls `speak("hello")`. Whitebox handles the rest: picks the right TTS backend, animates the mouth, fires a `SpeakStarted` event, and cleans up when done.
 
 ## 🧠 The body API
 
@@ -67,9 +67,9 @@ Error codes: `busy` `backend_unavailable` `invalid_stance` `no_active_session` `
 neutral  warm  playful  curious  alert  focused  guarded  stern  tired  sad  angry
 ```
 
-Stance sets the emotional baseline. Voice tone is derived from it automatically — `warm` sounds warm, `playful` sounds pet-like, anything alert/stern/angry goes serious.
+Stance sets the emotional baseline. Voice tone follows automatically: `warm` sounds warm, `playful` sounds pet-like, anything alert/stern/angry goes serious.
 
-Activity (idle / listening / thinking / speaking) overlays on top. You don't set activity directly — it follows body actions.
+Activity (idle / listening / thinking / speaking) overlays on top. You don't set activity directly - it follows body actions.
 
 ## 🐱 The avatar
 
@@ -157,7 +157,7 @@ src/                        Rust core library
   integrations/
     superclaw.rs            Superclaw agent integration
     info_feed.rs            Info feed
-src-tauri/                  Tauri shell (desktop window + IPC bridge)
+src-tauri/                  Tauri shell (desktop window, IPC bridge)
 src-web/                    Web frontend (Vite/JS)
 cat/                        Avatar PNG assets
 tests/                      Integration tests (Rust + JS)
