@@ -99,13 +99,7 @@ fn idle_animation_for_stance(
             "ears_style_rounded",
         ),
         Stance::Playful => (
-            if phase < 3 {
-                "eyes_excited_squint"
-            } else if phase < 6 {
-                "eyes_happy_closed"
-            } else {
-                "eyes_happy_closed"
-            },
+            if phase == 9 || phase == 10 { "eyes_happy_closed" } else { "eyes_excited_squint" },
             if phase < 3 {
                 "mouth_wavy_cat"
             } else if phase < 6 {
@@ -118,11 +112,7 @@ fn idle_animation_for_stance(
             "ears_style_rounded",
         ),
         Stance::Curious => (
-            if phase == 5 || phase == 11 {
-                "eyes_half_open_rose"
-            } else {
-                "eyes_open_rose"
-            },
+            if phase == 8 { "eyes_soft_closed" } else { "eyes_open_rose" },
             "mouth_tiny_triangle",
             "ears_style_sharp",
         ),
@@ -218,7 +208,7 @@ fn speaking_animation_for_stance(
     let (base_eyes, _, base_ears) = idle_animation_for_stance(stance, phase, preset);
     let eyes = match stance {
         Stance::Playful => {
-            if phase < 6 { "eyes_excited_squint" } else { "eyes_happy_closed" }
+            if phase == 9 || phase == 10 { "eyes_happy_closed" } else { "eyes_excited_squint" }
         }
         Stance::Warm => {
             if phase == 5 { "eyes_happy_closed" } else { "eyes_open_rose" }
