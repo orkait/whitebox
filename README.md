@@ -2,7 +2,7 @@
 
 # whitebox
 
-**The agent's body. It listens, speaks, and shows up on screen.**
+**Give your agent a body. It listens, speaks, and shows up on screen.**
 
 [![Rust](https://img.shields.io/badge/Rust-1.78-orange?logo=rust&logoColor=white)](https://www.rust-lang.org/)
 [![Tauri](https://img.shields.io/badge/Tauri-2-blue?logo=tauri&logoColor=white)](https://tauri.app/)
@@ -12,22 +12,11 @@
 
 ---
 
-Whitebox is the **Surface Plane** in the orkait architecture. When the agent wants to be seen or heard, this is the layer it reaches for.
+Whitebox is a body runtime for desktop agents. You drive it with a small set of body verbs - `listen()`, `speak(text)`, `set_stance(name)` - and it handles everything else: rendering a layered cat avatar, managing voice sessions, and emitting lifecycle events so your agent knows what's happening.
 
-It does not think, plan, or remember. It just exists: rendering a layered cat avatar, managing voice sessions, and exposing a body API so the agent can express itself without caring how any of it works under the hood.
+It does not think, plan, or remember. That's your system's job. Whitebox just gives it a face.
 
-## 📐 Where it sits
-
-```
-Master Agent
-    ├── InteractionPlane (POWER)   <- where humans talk to the agent
-    ├── Graphstore                 <- memory + cognition
-    └── Surface Plane (whitebox)   <- this repo
-```
-
-The agent calls `speak("hello")`. Whitebox handles the rest: picks the right TTS backend, animates the mouth, fires a `SpeakStarted` event, and cleans up when done.
-
-## 🧠 The body API
+## 🧠 Body API
 
 The full contract is in [`WHITEBOX_API.md`](./WHITEBOX_API.md). The short version:
 
@@ -35,11 +24,11 @@ The full contract is in [`WHITEBOX_API.md`](./WHITEBOX_API.md). The short versio
 
 | Command | What happens |
 |---------|-------------|
-| `listen()` | Start listening. Interrupts active speech first. Returns a session ID. |
+| `listen()` | Start a listening session. Interrupts active speech first. Returns a session ID. |
 | `stop_listening()` | End the active listening session. |
 | `speak(text)` | Start speaking. Interrupts anything else first. Returns a session ID. |
-| `stop_speaking()` | Stop the current speech. |
-| `set_stance(name)` | Change emotional posture. Affects expression and voice tone. |
+| `stop_speaking()` | Stop current speech. |
+| `set_stance(name)` | Change emotional posture. Affects avatar expression and voice tone. |
 | `set_status(text)` | Show a short status string on screen. |
 | `clear_status()` | Clear it. |
 
@@ -69,11 +58,25 @@ neutral  warm  playful  curious  alert  focused  guarded  stern  tired  sad  ang
 
 Stance sets the emotional baseline. Voice tone follows automatically: `warm` sounds warm, `playful` sounds pet-like, anything alert/stern/angry goes serious.
 
-Activity (idle / listening / thinking / speaking) overlays on top. You don't set activity directly - it follows body actions.
+Activity (idle / listening / thinking / speaking) overlays on top. You don't set it directly - it follows body actions.
 
-## 🐱 The avatar
+### Example
 
-A layered cat built from PNG parts. Each expression profile maps a stance to a specific combination:
+```rust
+let mut body = WhiteboxBody::new();
+
+body.set_stance(Stance::Curious)?;
+body.set_status("Thinking...");
+
+let id = body.speak("Hello there.")?;
+
+body.tick(); // drive the event loop
+let events = body.drain_events();
+```
+
+## 🐱 Avatar
+
+A layered cat built from PNG parts. Each stance maps to an expression profile, which picks a combination of face, eyes, mouth, and ears assets.
 
 <details>
 <summary>Expression profiles</summary>
@@ -103,7 +106,7 @@ cat/
 
 ## 🎙️ Voice backends
 
-Backends are swappable at runtime via `WhiteboxBody::replace_stt` / `replace_tts`. Swap in `mock` for tests, real backends for production.
+Backends are swappable at runtime via `WhiteboxBody::replace_stt` / `replace_tts`. Drop in `mock` for tests, real backends for production.
 
 | Backend | Kind | Notes |
 |---------|------|-------|
@@ -136,7 +139,7 @@ npm test
 
 ```
 src/                        Rust core library
-  api.rs                    WhiteboxBody, Stance, Activity (the public body runtime)
+  api.rs                    WhiteboxBody, Stance, Activity (public body runtime)
   state.rs                  WhiteboxState (internal render state)
   modes.rs                  Mode (Expression / Info / Interaction)
   profiles.rs               ExpressionProfile + PresetLibrary
@@ -154,9 +157,6 @@ src/                        Rust core library
     mod.rs                  SttBackend + TtsBackend traits
     types.rs                SpeechTone, SttEvent, VoiceResult
     backends/               whisper, piper, moonshine_sidecar, system_tts, mock
-  integrations/
-    superclaw.rs            Superclaw agent integration
-    info_feed.rs            Info feed
 src-tauri/                  Tauri shell (desktop window, IPC bridge)
 src-web/                    Web frontend (Vite/JS)
 cat/                        Avatar PNG assets
