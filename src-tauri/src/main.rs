@@ -12,6 +12,9 @@ use whitebox::state::CurrentTextKind;
 
 struct WhiteboxRuntime {
     body: Mutex<WhiteboxBody>,
+    // Cache the last rendered avatar so we only recompose when parts change.
+    // Stores (face, eyes, mouth, ears, base64_png).
+    avatar_cache: Mutex<Option<(String, String, String, String, String)>>,
 }
 
 #[derive(Serialize)]
@@ -62,7 +65,8 @@ fn snapshot(runtime: State<'_, WhiteboxRuntime>) -> Result<UiSnapshot, String> {
         .body
         .lock()
         .map_err(|_| "failed to lock body state".to_string())?;
-    make_snapshot(&body)
+    let mut cache = runtime.avatar_cache.lock().map_err(|_| "cache lock failed".to_string())?;
+    make_snapshot(&body, &mut cache)
 }
 
 #[tauri::command]
@@ -72,7 +76,8 @@ fn tick(runtime: State<'_, WhiteboxRuntime>) -> Result<UiSnapshot, String> {
         .lock()
         .map_err(|_| "failed to lock body state".to_string())?;
     body.tick();
-    make_snapshot(&body)
+    let mut cache = runtime.avatar_cache.lock().map_err(|_| "cache lock failed".to_string())?;
+    make_snapshot(&body, &mut cache)
 }
 
 #[tauri::command]
@@ -82,7 +87,8 @@ fn listen(runtime: State<'_, WhiteboxRuntime>) -> Result<UiSnapshot, String> {
         .lock()
         .map_err(|_| "failed to lock body state".to_string())?;
     body.listen().map_err(format_body_error)?;
-    make_snapshot(&body)
+    let mut cache = runtime.avatar_cache.lock().map_err(|_| "cache lock failed".to_string())?;
+    make_snapshot(&body, &mut cache)
 }
 
 #[tauri::command]
@@ -92,7 +98,8 @@ fn stop_listening(runtime: State<'_, WhiteboxRuntime>) -> Result<UiSnapshot, Str
         .lock()
         .map_err(|_| "failed to lock body state".to_string())?;
     body.stop_listening().map_err(format_body_error)?;
-    make_snapshot(&body)
+    let mut cache = runtime.avatar_cache.lock().map_err(|_| "cache lock failed".to_string())?;
+    make_snapshot(&body, &mut cache)
 }
 
 #[tauri::command]
@@ -102,7 +109,8 @@ fn speak(text: String, runtime: State<'_, WhiteboxRuntime>) -> Result<UiSnapshot
         .lock()
         .map_err(|_| "failed to lock body state".to_string())?;
     body.speak(text).map_err(format_body_error)?;
-    make_snapshot(&body)
+    let mut cache = runtime.avatar_cache.lock().map_err(|_| "cache lock failed".to_string())?;
+    make_snapshot(&body, &mut cache)
 }
 
 #[tauri::command]
@@ -112,7 +120,8 @@ fn stop_speaking(runtime: State<'_, WhiteboxRuntime>) -> Result<UiSnapshot, Stri
         .lock()
         .map_err(|_| "failed to lock body state".to_string())?;
     body.stop_speaking().map_err(format_body_error)?;
-    make_snapshot(&body)
+    let mut cache = runtime.avatar_cache.lock().map_err(|_| "cache lock failed".to_string())?;
+    make_snapshot(&body, &mut cache)
 }
 
 #[tauri::command]
@@ -123,7 +132,8 @@ fn set_stance(stance: String, runtime: State<'_, WhiteboxRuntime>) -> Result<UiS
         .map_err(|_| "failed to lock body state".to_string())?;
     let stance = parse_stance(&stance)?;
     body.set_stance(stance).map_err(format_body_error)?;
-    make_snapshot(&body)
+    let mut cache = runtime.avatar_cache.lock().map_err(|_| "cache lock failed".to_string())?;
+    make_snapshot(&body, &mut cache)
 }
 
 #[tauri::command]
@@ -133,7 +143,8 @@ fn set_status(text: String, runtime: State<'_, WhiteboxRuntime>) -> Result<UiSna
         .lock()
         .map_err(|_| "failed to lock body state".to_string())?;
     body.set_status(text);
-    make_snapshot(&body)
+    let mut cache = runtime.avatar_cache.lock().map_err(|_| "cache lock failed".to_string())?;
+    make_snapshot(&body, &mut cache)
 }
 
 #[tauri::command]
@@ -143,7 +154,8 @@ fn clear_status(runtime: State<'_, WhiteboxRuntime>) -> Result<UiSnapshot, Strin
         .lock()
         .map_err(|_| "failed to lock body state".to_string())?;
     body.clear_status();
-    make_snapshot(&body)
+    let mut cache = runtime.avatar_cache.lock().map_err(|_| "cache lock failed".to_string())?;
+    make_snapshot(&body, &mut cache)
 }
 
 #[tauri::command]
@@ -163,6 +175,7 @@ fn main() {
     tauri::Builder::default()
         .manage(WhiteboxRuntime {
             body: Mutex::new(build_body().expect("whitebox body should initialize")),
+            avatar_cache: Mutex::new(None),
         })
         .invoke_handler(tauri::generate_handler![
             snapshot,
@@ -187,10 +200,13 @@ fn build_body() -> Result<WhiteboxBody, String> {
     Ok(WhiteboxBody::from_app(app))
 }
 
-fn make_snapshot(body: &WhiteboxBody) -> Result<UiSnapshot, String> {
+type AvatarCache = Option<(String, String, String, String, String)>;
+
+fn make_snapshot(body: &WhiteboxBody, cache: &mut AvatarCache) -> Result<UiSnapshot, String> {
     let body_snapshot = body.snapshot();
     let scene = body.app().scene();
     let avatar = &scene.avatar;
+    let data_url = avatar_data_url_cached(body, avatar, cache)?;
     Ok(UiSnapshot {
         stance: body_snapshot.stance.as_str().to_string(),
         stance_label: body_snapshot.stance.label().to_string(),
@@ -212,18 +228,33 @@ fn make_snapshot(body: &WhiteboxBody) -> Result<UiSnapshot, String> {
             mouth: avatar.mouth.to_string(),
             ears: avatar.ears.to_string(),
         },
-        avatar_data_url: avatar_data_url(body)?,
+        avatar_data_url: data_url,
     })
 }
 
-fn avatar_data_url(body: &WhiteboxBody) -> Result<String, String> {
+fn avatar_data_url_cached(
+    body: &WhiteboxBody,
+    avatar: &whitebox::avatar::AvatarView,
+    cache: &mut AvatarCache,
+) -> Result<String, String> {
+    let key = (
+        avatar.face.to_string(),
+        avatar.eyes.to_string(),
+        avatar.mouth.to_string(),
+        avatar.ears.to_string(),
+    );
+    if let Some((cf, ce, cm, cr, ref url)) = *cache {
+        if cf == key.0 && ce == key.1 && cm == key.2 && cr == key.3 {
+            return Ok(url.clone());
+        }
+    }
     let image = body.app().composed_avatar_image().map_err(|e| e.to_string())?;
     let mut png = Cursor::new(Vec::new());
-    image
-        .write_to(&mut png, ImageFormat::Png)
-        .map_err(|e| e.to_string())?;
+    image.write_to(&mut png, ImageFormat::Png).map_err(|e| e.to_string())?;
     let encoded = base64::engine::general_purpose::STANDARD.encode(png.into_inner());
-    Ok(format!("data:image/png;base64,{encoded}"))
+    let url = format!("data:image/png;base64,{encoded}");
+    *cache = Some((key.0, key.1, key.2, key.3, url.clone()));
+    Ok(url)
 }
 
 fn text_kind_label(kind: CurrentTextKind) -> String {
