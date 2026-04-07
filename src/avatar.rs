@@ -94,13 +94,7 @@ fn idle_animation_for_stance(
             preset.ears,
         ),
         Stance::Warm => (
-            if phase == 5 {
-                "eyes_soft_closed"
-            } else if phase >= 8 {
-                "eyes_half_open_rose"
-            } else {
-                "eyes_open_rose"
-            },
+            if phase == 8 { "eyes_soft_closed" } else { "eyes_open_rose" },
             "mouth_soft_smile",
             "ears_style_rounded",
         ),
@@ -227,7 +221,7 @@ fn speaking_animation_for_stance(
             if phase < 6 { "eyes_excited_squint" } else { "eyes_happy_closed" }
         }
         Stance::Warm => {
-            if phase == 5 { "eyes_happy_closed" } else { "eyes_half_open_rose" }
+            if phase == 5 { "eyes_happy_closed" } else { "eyes_open_rose" }
         }
         _ => base_eyes,
     };
