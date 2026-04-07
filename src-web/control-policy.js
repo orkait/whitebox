@@ -1,6 +1,5 @@
 export function deriveControlState({ pending, snapshot }) {
-  const canListen =
-    snapshot.listenState === "Idle" || snapshot.listenState === "Ready";
+  const canListen = snapshot.listenState === "Idle";
   const canStopListening = snapshot.listenState === "Hearing";
   const canSpeak = true;
   const canStopSpeaking = snapshot.speakState === "Speaking";
@@ -31,11 +30,7 @@ export function canRunCommand({ pending, snapshot, command, payload = {} }) {
     return false;
   }
 
-  if (
-    command === "listen" &&
-    snapshot.listenState !== "Idle" &&
-    snapshot.listenState !== "Ready"
-  ) {
+  if (command === "listen" && snapshot.listenState !== "Idle") {
     return false;
   }
   if (command === "stop_listening" && snapshot.listenState !== "Hearing") {
