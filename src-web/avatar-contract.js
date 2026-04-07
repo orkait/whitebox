@@ -154,13 +154,13 @@ function idleAnimationForStance(stanceId, phase, base) {
     case "playful":
       return {
         ...base,
-        eyes: phase < 3 ? "eyes_excited_squint" : "eyes_happy_closed",
+        eyes: phase === 9 || phase === 10 ? "eyes_happy_closed" : "eyes_excited_squint",
         mouth: phase < 3 ? "mouth_wavy_cat" : phase < 6 ? "mouth_cat_smile" : phase < 9 ? "mouth_open_tongue" : "mouth_wavy_cat",
       };
     case "curious":
       return {
         ...base,
-        eyes: phase === 5 || phase === 11 ? "eyes_half_open_rose" : "eyes_open_rose",
+        eyes: phase === 8 ? "eyes_soft_closed" : "eyes_open_rose",
         mouth: "mouth_tiny_triangle",
       };
     case "alert":
@@ -277,6 +277,7 @@ function speakingAnimationForStance(stanceId, phase, base) {
       mouth = phase < 3 || (phase >= 6 && phase < 9) ? "mouth_soft_smile" : "mouth_open_flat";
       break;
     case "playful":
+      eyes = phase === 9 || phase === 10 ? "eyes_happy_closed" : "eyes_excited_squint";
       mouth = phase < 3 ? "mouth_wavy_cat" : phase < 6 ? "mouth_open_tongue" : phase < 9 ? "mouth_cat_smile" : "mouth_open_flat";
       break;
     case "curious":
