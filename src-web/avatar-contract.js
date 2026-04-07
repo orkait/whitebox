@@ -148,7 +148,7 @@ function idleAnimationForStance(stanceId, phase, base) {
     case "warm":
       return {
         ...base,
-        eyes: phase === 5 ? "eyes_soft_closed" : phase >= 8 ? "eyes_half_open_rose" : "eyes_open_rose",
+        eyes: phase === 8 ? "eyes_soft_closed" : "eyes_open_rose",
         mouth: "mouth_soft_smile",
       };
     case "playful":
@@ -273,6 +273,7 @@ function speakingAnimationForStance(stanceId, phase, base) {
   let mouth;
   switch (stanceId) {
     case "warm":
+      eyes = phase === 5 ? "eyes_happy_closed" : "eyes_open_rose";
       mouth = phase < 3 || (phase >= 6 && phase < 9) ? "mouth_soft_smile" : "mouth_open_flat";
       break;
     case "playful":
