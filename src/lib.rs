@@ -6,7 +6,6 @@ pub mod avatar;
 pub mod clips;
 pub mod config;
 pub mod events;
-pub mod integrations;
 pub mod modes;
 pub mod profiles;
 pub mod reducer;

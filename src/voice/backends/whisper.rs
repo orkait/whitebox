@@ -100,7 +100,9 @@ impl SttBackend for WhisperStt {
                     self.events.push_back(SttEvent::TranscriptFinal(text))
                 }
                 Ok(_) => {}
-                Err(_e) => {}
+                Err(e) => {
+                    eprintln!("whisper transcription error: {e}");
+                }
             }
         }
         Ok(())
