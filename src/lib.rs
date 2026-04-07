@@ -1,4 +1,5 @@
 pub mod animations;
+pub mod superclaw;
 pub mod api;
 pub mod app;
 pub mod assets;
