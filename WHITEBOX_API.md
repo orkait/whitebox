@@ -168,6 +168,7 @@ Stable error codes:
 busy
 backend_unavailable
 invalid_stance
+invalid_input
 no_active_session
 internal_error
 ```

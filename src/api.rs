@@ -108,6 +108,7 @@ pub enum ErrorCode {
     Busy,
     BackendUnavailable,
     InvalidStance,
+    InvalidInput,
     NoActiveSession,
     InternalError,
 }
@@ -118,6 +119,7 @@ impl ErrorCode {
             ErrorCode::Busy => "busy",
             ErrorCode::BackendUnavailable => "backend_unavailable",
             ErrorCode::InvalidStance => "invalid_stance",
+            ErrorCode::InvalidInput => "invalid_input",
             ErrorCode::NoActiveSession => "no_active_session",
             ErrorCode::InternalError => "internal_error",
         }
@@ -222,8 +224,18 @@ impl WhiteboxBody {
 
     pub fn speak(&mut self, text: impl Into<String>) -> Result<SessionId, BodyError> {
         let text = text.into();
+        if text.trim().is_empty() {
+            return Err(self.fail(ErrorCode::InvalidInput, "speak text must not be empty", None));
+        }
         if let Some(id) = self.active_listen.take() {
             self.listen_completion_pending = false;
+            if let Err(cause) = self.app.end_listening() {
+                self.events.push_back(BodyEvent::Error {
+                    code: ErrorCode::BackendUnavailable,
+                    message: "failed to interrupt listening".into(),
+                    cause: Some(cause),
+                });
+            }
             self.events
                 .push_back(BodyEvent::ListenStopped { id, reason: StopReason::Interrupted });
         }
