@@ -1,12 +1,9 @@
 use std::path::{Path, PathBuf};
-use std::sync::mpsc::Receiver;
 
 use crate::api::Stance;
 use crate::avatar::{compose_avatar_image, resolve_avatar};
 use crate::config::{AppConfig, VoiceConfig};
 use crate::events::WhiteboxEvent;
-use crate::integrations::info_feed::InfoDirective;
-use crate::integrations::superclaw::SpeechDirective;
 use crate::reducer::reduce;
 use crate::scene::Scene;
 use crate::state::{CurrentTextKind, ListenState, WhiteboxState};
@@ -20,43 +17,27 @@ pub struct App {
     pub cat_root: PathBuf,
     pub stt: SttManager,
     pub tts: TtsManager,
-    speech_rx: Receiver<SpeechDirective>,
-    info_rx: Receiver<InfoDirective>,
 }
 
 impl App {
-    pub fn new(speech_rx: Receiver<SpeechDirective>, info_rx: Receiver<InfoDirective>) -> Self {
-        Self::from_config(speech_rx, info_rx, AppConfig::default())
+    pub fn new() -> Self {
+        Self::from_config(AppConfig::default())
     }
 
-    pub fn with_voice_config(
-        speech_rx: Receiver<SpeechDirective>,
-        info_rx: Receiver<InfoDirective>,
-        cfg: VoiceConfig,
-    ) -> Self {
-        Self::from_config(
-            speech_rx,
-            info_rx,
-            AppConfig {
-                voice: cfg,
-                ..AppConfig::default()
-            },
-        )
+    pub fn with_voice_config(cfg: VoiceConfig) -> Self {
+        Self::from_config(AppConfig {
+            voice: cfg,
+            ..AppConfig::default()
+        })
     }
 
-    pub fn from_config(
-        speech_rx: Receiver<SpeechDirective>,
-        info_rx: Receiver<InfoDirective>,
-        cfg: AppConfig,
-    ) -> Self {
+    pub fn from_config(cfg: AppConfig) -> Self {
         Self {
             state: WhiteboxState::default(),
             config: cfg.clone(),
             cat_root: PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("cat"),
             stt: SttManager::new(build_stt_backend_from_config(&cfg.voice)),
             tts: TtsManager::new(build_tts_backend_from_config(&cfg.voice)),
-            speech_rx,
-            info_rx,
         }
     }
 
@@ -88,25 +69,6 @@ impl App {
         reduce(&mut self.state, WhiteboxEvent::ListenStopped);
         self.log("listening stopped".to_string());
         Ok(())
-    }
-
-    pub fn drain_external(&mut self) {
-        while let Ok(msg) = self.speech_rx.try_recv() {
-            self.log(format!(
-                "speech directive received: {}",
-                msg.interaction_intent
-            ));
-            if let Err(err) = self.request_speak(msg.text, msg.tone) {
-                self.log(format!("speech directive failed: {err}"));
-            }
-        }
-        while let Ok(msg) = self.info_rx.try_recv() {
-            self.log(format!("info fragment received from {}", msg.source));
-            reduce(
-                &mut self.state,
-                WhiteboxEvent::InfoFragment(format!("[{}] {}", msg.source, msg.fragment)),
-            );
-        }
     }
 
     pub fn drain_voice(&mut self) -> Vec<SttEvent> {

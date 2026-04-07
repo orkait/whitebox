@@ -1,5 +1,5 @@
 use std::io::Cursor;
-use std::sync::{mpsc, Mutex};
+use std::sync::Mutex;
 
 use base64::Engine;
 use image::ImageFormat;
@@ -8,7 +8,6 @@ use tauri::State;
 use whitebox::api::{BodyEvent, Stance, WhiteboxBody};
 use whitebox::app::App;
 use whitebox::config::AppConfig;
-use whitebox::integrations::superclaw::SpeechDirective;
 use whitebox::state::CurrentTextKind;
 
 struct WhiteboxRuntime {
@@ -182,11 +181,9 @@ fn main() {
 }
 
 fn build_body() -> Result<WhiteboxBody, String> {
-    let (_speech_tx, speech_rx) = mpsc::channel::<SpeechDirective>();
-    let (_info_tx, info_rx) = mpsc::channel();
     let cfg_path = std::env::var("WHITEBOX_CONFIG").ok();
     let cfg = AppConfig::load(cfg_path.as_deref().map(std::path::Path::new))?;
-    let app = App::from_config(speech_rx, info_rx, cfg);
+    let app = App::from_config(cfg);
     Ok(WhiteboxBody::from_app(app))
 }
 

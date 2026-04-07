@@ -1,5 +1,4 @@
 use std::collections::VecDeque;
-use std::sync::mpsc;
 
 use crate::app::App;
 use crate::state::{ListenState, SpeakState};
@@ -165,9 +164,7 @@ pub struct WhiteboxBody {
 
 impl WhiteboxBody {
     pub fn new() -> Self {
-        let (_speech_tx, speech_rx) = mpsc::channel();
-        let (_info_tx, info_rx) = mpsc::channel();
-        Self::from_app(App::new(speech_rx, info_rx))
+        Self::from_app(App::new())
     }
 
     pub fn from_app(mut app: App) -> Self {
