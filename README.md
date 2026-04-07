@@ -1,77 +1,82 @@
+<div align="center">
+
 # whitebox
 
-Whitebox is the **Surface Plane**: the layer the agent uses to express itself visibly and audibly.
+**The agent's body. It listens, speaks, and shows up on screen.**
 
-It owns:
-- a **layered cat avatar** rendered in a Tauri desktop window
-- a **voice layer** (speech-to-text + text-to-speech) with swappable backends
-- a **body runtime** (`WhiteboxBody`) with a small, semantic API
+[![Rust](https://img.shields.io/badge/Rust-1.78-orange?logo=rust&logoColor=white)](https://www.rust-lang.org/)
+[![Tauri](https://img.shields.io/badge/Tauri-2-blue?logo=tauri&logoColor=white)](https://tauri.app/)
+[![Platform](https://img.shields.io/badge/Platform-Desktop-lightgrey?logo=windows&logoColor=white)](https://tauri.app/)
 
-It does not own reasoning, planning, memory, or conversation logic. Those belong to the agent. Whitebox only gives the agent a body.
+</div>
 
-## Role in the architecture
+---
+
+Whitebox is the **Surface Plane** in the orkait architecture. When the agent wants to be seen or heard, this is the layer it reaches for.
+
+It does not think, plan, or remember. It just exists — rendering a layered cat avatar, managing voice sessions, and exposing a body API so the agent can express itself without caring how any of it works under the hood.
+
+## 📐 Where it sits
 
 ```
 Master Agent
-    └── InteractionPlane (POWER)   <- human/agent interaction
-    └── Surface Plane (whitebox)   <- visible + spoken expression  <- you are here
-    └── Graphstore                 <- memory + cognition
+    ├── InteractionPlane (POWER)   <- where humans talk to the agent
+    ├── Graphstore                 <- memory + cognition
+    └── Surface Plane (whitebox)   <- this repo
 ```
 
-The agent drives whitebox with body verbs: `listen()`, `speak(text)`, `set_stance(name)`, `set_status(text)`. Whitebox handles rendering, voice backends, and lifecycle events.
+The agent calls `speak("hello")`. Whitebox handles the rest — picking the right TTS backend, animating the mouth, firing a `SpeakStarted` event, and cleaning up when it's done.
 
-## Body API
+## 🧠 The body API
 
-The full API contract lives in [`WHITEBOX_API.md`](./WHITEBOX_API.md). Summary:
+The full contract is in [`WHITEBOX_API.md`](./WHITEBOX_API.md). The short version:
 
 ### Commands
 
-| Command | What |
-|---------|------|
-| `listen()` | Start a listening session. Interrupts active speech first. Returns `session_id`. |
+| Command | What happens |
+|---------|-------------|
+| `listen()` | Start listening. Interrupts active speech first. Returns a session ID. |
 | `stop_listening()` | End the active listening session. |
-| `speak(text)` | Start a speaking session. Interrupts active listen/speech first. Returns `session_id`. |
-| `stop_speaking()` | End the active speaking session. |
-| `set_stance(name)` | Set the emotional posture. Changes expression baseline. |
-| `set_status(text)` | Set a short visible status string. |
-| `clear_status()` | Clear the visible status string. |
+| `speak(text)` | Start speaking. Interrupts anything else first. Returns a session ID. |
+| `stop_speaking()` | Stop the current speech. |
+| `set_stance(name)` | Change emotional posture. Affects expression and voice tone. |
+| `set_status(text)` | Show a short status string on screen. |
+| `clear_status()` | Clear it. |
 
 ### Events
 
 ```
 on_listen_started(id)
-on_listen_partial(id, text)
-on_listen_final(id, text)
-on_listen_stopped(id, reason)      # reason: completed | cancelled | interrupted | error
+on_listen_partial(id, text)       # transcript in progress
+on_listen_final(id, text)         # transcript complete
+on_listen_stopped(id, reason)
 
 on_speak_started(id, text)
 on_speak_stopped(id, reason)
 
-on_error(code, message, cause?)    # codes: busy | backend_unavailable | invalid_stance
-                                   #        no_active_session | internal_error
+on_error(code, message, cause?)
 ```
 
-### Stance vocabulary
+Stop reasons: `completed` `cancelled` `interrupted` `error`
+
+Error codes: `busy` `backend_unavailable` `invalid_stance` `no_active_session` `internal_error`
+
+### Stances
 
 ```
 neutral  warm  playful  curious  alert  focused  guarded  stern  tired  sad  angry
 ```
 
-Stance sets the emotional baseline. Activity (idle / listening / thinking / speaking) is derived from body actions and overlays on top of stance.
+Stance sets the emotional baseline. Voice tone is derived from it automatically — `warm` sounds warm, `playful` sounds pet-like, anything alert/stern/angry goes serious.
 
-## Avatar
+Activity (idle / listening / thinking / speaking) overlays on top. You don't set activity directly — it follows body actions.
 
-The avatar is a layered cat assembled from PNG assets in `cat/`:
+## 🐱 The avatar
 
-```
-cat/
-  face/     face_fill_blush, face_fill_rose
-  eyes/     11 variants (open, happy, serious, sleepy, teary, ...)
-  mouth/    10 variants (flat, smile, frown, wavy, tongue, ...)
-  ears/     ears_style_rounded, ears_style_sharp
-```
+A layered cat built from PNG parts. Each expression profile maps a stance to a specific combination:
 
-Expression profiles map a stance to a specific combination of assets:
+<details>
+<summary>Expression profiles</summary>
 
 | Profile | Face | Eyes | Mouth | Ears |
 |---------|------|------|-------|------|
@@ -81,48 +86,60 @@ Expression profiles map a stance to a specific combination of assets:
 | Curious | rose | open_rose | tiny_triangle | sharp |
 | Sleepy | blush | sleepy_flat | flat_neutral | rounded |
 
-## Voice backends
+</details>
 
-Backends are swappable at runtime via `WhiteboxBody::replace_stt` / `replace_tts`.
+<details>
+<summary>Available assets</summary>
 
-| Backend | Type | Notes |
+```
+cat/
+  face/     face_fill_blush, face_fill_rose
+  eyes/     11 variants (open, happy, serious, sleepy, teary, worried, ...)
+  mouth/    10 variants (flat, smile, frown, wavy, tongue, pout, ...)
+  ears/     ears_style_rounded, ears_style_sharp
+```
+
+</details>
+
+## 🎙️ Voice backends
+
+Backends are swappable at runtime via `WhiteboxBody::replace_stt` / `replace_tts`. Swap in `mock` for tests, real backends for production.
+
+| Backend | Kind | Notes |
 |---------|------|-------|
-| `whisper` | STT | OpenAI Whisper local inference |
+| `whisper` | STT | OpenAI Whisper running locally |
 | `moonshine_sidecar` | STT | Moonshine model via sidecar process |
 | `piper` | TTS | Piper neural TTS |
-| `system_tts` | TTS | OS-native TTS (fallback) |
-| `mock` | STT + TTS | For tests, no audio I/O |
+| `system_tts` | TTS | OS-native TTS, zero setup |
+| `mock` | STT + TTS | Silent, event-accurate, great for tests |
 
-Speech tone is derived automatically from stance. `warm` uses warm tone, `playful` uses pet-like tone, alert/focused/stern/angry use serious tone, everything else is neutral.
-
-## Development
+## 🚀 Getting started
 
 ```bash
 npm install
 npm run tauri dev
 ```
 
-Build release:
-
 ```bash
+# release build
 npm run tauri build
-```
 
-Run tests:
-
-```bash
+# tests
 cargo test
 npm test
 ```
 
-## Project structure
+## 🗂️ Project structure
+
+<details>
+<summary>Expand</summary>
 
 ```
 src/                        Rust core library
-  api.rs                    Stance, Activity, WhiteboxBody (public body runtime)
+  api.rs                    WhiteboxBody, Stance, Activity (the public body runtime)
   state.rs                  WhiteboxState (internal render state)
-  modes.rs                  Mode enum (Expression / Info / Interaction)
-  profiles.rs               ExpressionProfile + PresetLibrary (stance to avatar assets)
+  modes.rs                  Mode (Expression / Info / Interaction)
+  profiles.rs               ExpressionProfile + PresetLibrary
   avatar.rs                 Avatar assembly
   animation.rs              Animation engine
   scene.rs                  Scene graph
@@ -134,26 +151,21 @@ src/                        Rust core library
   events.rs                 Internal event types
   config.rs                 Configuration
   voice/
-    mod.rs                  SttBackend + TtsBackend traits, SttManager, TtsManager
+    mod.rs                  SttBackend + TtsBackend traits
     types.rs                SpeechTone, SttEvent, VoiceResult
-    factory.rs              Backend factory
-    registry.rs             Backend registry
     backends/               whisper, piper, moonshine_sidecar, system_tts, mock
   integrations/
     superclaw.rs            Superclaw agent integration
-    info_feed.rs            Info feed integration
+    info_feed.rs            Info feed
 src-tauri/                  Tauri shell (desktop window + IPC bridge)
 src-web/                    Web frontend (Vite/JS)
-  avatar-contract.js        Avatar rendering contract
-  browser-runtime.js        Browser-side runtime
-  control-policy.js         Input control policy
-  main.js                   Entry point
-  styles.css
-cat/                        Avatar PNG assets (face, eyes, mouth, ears, icons, previews)
+cat/                        Avatar PNG assets
 tests/                      Integration tests (Rust + JS)
 docs/                       Design specs
 ```
 
-## Tech
+</details>
+
+## ⚙️ Tech
 
 Rust · Tauri 2 · Vite/JS
