@@ -1,6 +1,5 @@
 use crate::api::Stance;
 use crate::modes::Mode;
-use crate::profiles::ExpressionProfile;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CurrentTextKind {
@@ -26,7 +25,6 @@ pub enum SpeakState {
 pub struct WhiteboxState {
     pub mode: Mode,
     pub stance: Stance,
-    pub profile: ExpressionProfile,
     pub listen_state: ListenState,
     pub speak_state: SpeakState,
     pub listen_debounce_ticks_remaining: u8,
@@ -44,7 +42,6 @@ impl Default for WhiteboxState {
         Self {
             mode: Mode::Expression,
             stance: Stance::Neutral,
-            profile: ExpressionProfile::Neutral,
             listen_state: ListenState::Idle,
             speak_state: SpeakState::Idle,
             listen_debounce_ticks_remaining: 0,

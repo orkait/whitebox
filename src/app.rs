@@ -153,7 +153,6 @@ impl App {
 
     pub fn set_stance(&mut self, stance: Stance) {
         self.state.stance = stance;
-        self.state.profile = profile_for_stance(stance);
     }
 
     pub fn set_status_text(&mut self, text: Option<String>) {
@@ -199,19 +198,5 @@ fn map_tone(tone: &str) -> SpeechTone {
         "serious" => SpeechTone::Serious,
         "urgent" => SpeechTone::Urgent,
         _ => SpeechTone::Neutral,
-    }
-}
-
-fn profile_for_stance(stance: Stance) -> crate::profiles::ExpressionProfile {
-    match stance {
-        Stance::Neutral => crate::profiles::ExpressionProfile::Neutral,
-        Stance::Warm | Stance::Playful => crate::profiles::ExpressionProfile::PetLike,
-        Stance::Curious => crate::profiles::ExpressionProfile::Curious,
-        Stance::Alert
-        | Stance::Focused
-        | Stance::Guarded
-        | Stance::Stern
-        | Stance::Angry => crate::profiles::ExpressionProfile::Serious,
-        Stance::Tired | Stance::Sad => crate::profiles::ExpressionProfile::Sleepy,
     }
 }
