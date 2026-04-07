@@ -315,7 +315,7 @@ async function bootstrap() {
     if (!pending) {
       call("tick");
     }
-  }, 41);
+  }, 83);
 }
 
 function capitalize(value) {
