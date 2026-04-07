@@ -176,29 +176,17 @@ function idleAnimationForStance(stanceId, phase, base) {
         mouth: "mouth_flat_neutral",
       };
     case "guarded":
-      return {
-        ...base,
-        eyes: phase === 6 || phase === 7 ? "eyes_half_open_blush" : "eyes_worried_angled",
-        mouth: "mouth_small_frown",
-      };
+      return { ...base, eyes: "eyes_worried_angled", mouth: "mouth_small_frown" };
     case "stern":
-      return {
-        ...base,
-        eyes: "eyes_serious_angry",
-        mouth: "mouth_chevron_serious",
-      };
+      return { ...base, eyes: "eyes_serious_angry", mouth: "mouth_chevron_serious" };
     case "tired":
       return {
         ...base,
-        eyes: phase >= 4 && phase <= 7 ? "eyes_soft_closed" : "eyes_sleepy_flat",
+        eyes: phase === 6 || phase === 7 ? "eyes_soft_closed" : "eyes_sleepy_flat",
         mouth: "mouth_flat_neutral",
       };
     case "sad":
-      return {
-        ...base,
-        eyes: phase === 9 ? "eyes_soft_closed" : "eyes_teary",
-        mouth: "mouth_small_frown",
-      };
+      return { ...base, eyes: "eyes_teary", mouth: "mouth_small_frown" };
     case "angry":
       return {
         ...base,
@@ -300,15 +288,19 @@ function speakingAnimationForStance(stanceId, phase, base) {
       break;
     case "focused":
     case "neutral":
-    case "tired":
       mouth = phase < 6 ? "mouth_flat_neutral" : "mouth_open_flat";
       break;
+    case "tired":
+      mouth = phase < 9 ? "mouth_flat_neutral" : "mouth_open_flat";
+      break;
     case "guarded":
+      mouth = phase < 6 || phase >= 9 ? "mouth_small_frown" : "mouth_tiny_triangle";
+      break;
     case "sad":
       mouth = phase < 6 || phase >= 9 ? "mouth_small_frown" : "mouth_open_flat";
       break;
     case "stern":
-      mouth = phase < 5 || (phase >= 7 && phase < 11) ? "mouth_chevron_serious" : "mouth_open_flat";
+      mouth = phase < 5 || (phase >= 7 && phase < 11) ? "mouth_chevron_serious" : "mouth_tiny_triangle";
       break;
     case "angry":
       mouth = phase < 4 || (phase >= 7 && phase < 10) ? "mouth_pout_loop" : "mouth_open_flat";

@@ -143,11 +143,7 @@ fn idle_animation_for_stance(
             "ears_style_sharp",
         ),
         Stance::Guarded => (
-            if phase == 6 || phase == 7 {
-                "eyes_half_open_blush"
-            } else {
-                "eyes_worried_angled"
-            },
+            "eyes_worried_angled",
             "mouth_small_frown",
             "ears_style_sharp",
         ),
@@ -157,16 +153,12 @@ fn idle_animation_for_stance(
             "ears_style_sharp",
         ),
         Stance::Tired => (
-            if (4..=7).contains(&phase) {
-                "eyes_soft_closed"
-            } else {
-                "eyes_sleepy_flat"
-            },
+            if phase == 6 || phase == 7 { "eyes_soft_closed" } else { "eyes_sleepy_flat" },
             "mouth_flat_neutral",
             "ears_style_rounded",
         ),
         Stance::Sad => (
-            if phase == 9 { "eyes_soft_closed" } else { "eyes_teary" },
+            "eyes_teary",
             "mouth_small_frown",
             "ears_style_rounded",
         ),
@@ -257,14 +249,20 @@ fn speaking_animation_for_stance(
         Stance::Curious | Stance::Alert => {
             if phase < 6 { "mouth_tiny_triangle" } else { "mouth_open_flat" }
         }
-        Stance::Focused | Stance::Neutral | Stance::Tired => {
+        Stance::Focused | Stance::Neutral => {
             if phase < 6 { "mouth_flat_neutral" } else { "mouth_open_flat" }
         }
-        Stance::Guarded | Stance::Sad => {
+        Stance::Tired => {
+            if phase < 9 { "mouth_flat_neutral" } else { "mouth_open_flat" }
+        }
+        Stance::Guarded => {
+            if phase < 6 || phase >= 9 { "mouth_small_frown" } else { "mouth_tiny_triangle" }
+        }
+        Stance::Sad => {
             if phase < 6 || phase >= 9 { "mouth_small_frown" } else { "mouth_open_flat" }
         }
         Stance::Stern => {
-            if phase < 5 || (7..11).contains(&phase) { "mouth_chevron_serious" } else { "mouth_open_flat" }
+            if phase < 5 || (7..11).contains(&phase) { "mouth_chevron_serious" } else { "mouth_tiny_triangle" }
         }
         Stance::Angry => {
             if phase < 4 || (7..10).contains(&phase) { "mouth_pout_loop" } else { "mouth_open_flat" }
