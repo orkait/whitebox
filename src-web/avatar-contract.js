@@ -1,98 +1,54 @@
+import * as neutral from "./animations/neutral.js";
+import * as warm    from "./animations/warm.js";
+import * as playful from "./animations/playful.js";
+import * as curious from "./animations/curious.js";
+import * as alert   from "./animations/alert.js";
+import * as focused from "./animations/focused.js";
+import * as guarded from "./animations/guarded.js";
+import * as stern   from "./animations/stern.js";
+import * as tired   from "./animations/tired.js";
+import * as sad     from "./animations/sad.js";
+import * as angry   from "./animations/angry.js";
+
+const ANIMATIONS = {
+  neutral,
+  warm,
+  playful,
+  curious,
+  alert,
+  focused,
+  guarded,
+  stern,
+  tired,
+  sad,
+  angry,
+};
+
+// Fallback static expressions used when avatarParts is not present in a snapshot
+// (should not happen in normal operation — kept for defensive rendering only)
 const STANCE_EXPRESSIONS = {
-  neutral: {
-    face: "face_fill_blush",
-    eyes: "eyes_open_blush",
-    mouth: "mouth_flat_neutral",
-    ears: "ears_style_rounded",
-  },
-  warm: {
-    face: "face_fill_rose",
-    eyes: "eyes_half_open_rose",
-    mouth: "mouth_soft_smile",
-    ears: "ears_style_rounded",
-  },
-  playful: {
-    face: "face_fill_rose",
-    eyes: "eyes_excited_squint",
-    mouth: "mouth_wavy_cat",
-    ears: "ears_style_rounded",
-  },
-  curious: {
-    face: "face_fill_rose",
-    eyes: "eyes_open_rose",
-    mouth: "mouth_tiny_triangle",
-    ears: "ears_style_sharp",
-  },
-  alert: {
-    face: "face_fill_blush",
-    eyes: "eyes_open_rose",
-    mouth: "mouth_tiny_triangle",
-    ears: "ears_style_sharp",
-  },
-  focused: {
-    face: "face_fill_blush",
-    eyes: "eyes_half_open_blush",
-    mouth: "mouth_flat_neutral",
-    ears: "ears_style_sharp",
-  },
-  guarded: {
-    face: "face_fill_blush",
-    eyes: "eyes_worried_angled",
-    mouth: "mouth_small_frown",
-    ears: "ears_style_sharp",
-  },
-  stern: {
-    face: "face_fill_blush",
-    eyes: "eyes_serious_angry",
-    mouth: "mouth_chevron_serious",
-    ears: "ears_style_sharp",
-  },
-  tired: {
-    face: "face_fill_blush",
-    eyes: "eyes_sleepy_flat",
-    mouth: "mouth_flat_neutral",
-    ears: "ears_style_rounded",
-  },
-  sad: {
-    face: "face_fill_blush",
-    eyes: "eyes_teary",
-    mouth: "mouth_small_frown",
-    ears: "ears_style_rounded",
-  },
-  angry: {
-    face: "face_fill_blush",
-    eyes: "eyes_serious_angry",
-    mouth: "mouth_pout_loop",
-    ears: "ears_style_sharp",
-  },
+  neutral: { face: "face_fill_blush", eyes: "eyes_open_blush",      mouth: "mouth_flat_neutral",    ears: "ears_style_rounded" },
+  warm:    { face: "face_fill_rose",  eyes: "eyes_open_rose",       mouth: "mouth_soft_smile",      ears: "ears_style_rounded" },
+  playful: { face: "face_fill_rose",  eyes: "eyes_excited_squint",  mouth: "mouth_wavy_cat",        ears: "ears_style_rounded" },
+  curious: { face: "face_fill_rose",  eyes: "eyes_open_rose",       mouth: "mouth_tiny_triangle",   ears: "ears_style_sharp"   },
+  alert:   { face: "face_fill_blush", eyes: "eyes_open_rose",       mouth: "mouth_tiny_triangle",   ears: "ears_style_sharp"   },
+  focused: { face: "face_fill_blush", eyes: "eyes_half_open_blush", mouth: "mouth_flat_neutral",    ears: "ears_style_sharp"   },
+  guarded: { face: "face_fill_blush", eyes: "eyes_worried_angled",  mouth: "mouth_small_frown",     ears: "ears_style_sharp"   },
+  stern:   { face: "face_fill_blush", eyes: "eyes_serious_angry",   mouth: "mouth_chevron_serious", ears: "ears_style_sharp"   },
+  tired:   { face: "face_fill_blush", eyes: "eyes_sleepy_flat",     mouth: "mouth_flat_neutral",    ears: "ears_style_rounded" },
+  sad:     { face: "face_fill_blush", eyes: "eyes_teary",           mouth: "mouth_small_frown",     ears: "ears_style_rounded" },
+  angry:   { face: "face_fill_blush", eyes: "eyes_serious_angry",   mouth: "mouth_pout_loop",       ears: "ears_style_sharp"   },
 };
 
 export const STANCE_IDS = [
-  "neutral",
-  "warm",
-  "playful",
-  "curious",
-  "alert",
-  "focused",
-  "guarded",
-  "stern",
-  "tired",
-  "sad",
-  "angry",
+  "neutral", "warm", "playful", "curious", "alert",
+  "focused", "guarded", "stern", "tired", "sad", "angry",
 ];
 
 const STANCE_LABELS = {
-  neutral: "Neutral",
-  warm: "Warm",
-  playful: "Playful",
-  curious: "Curious",
-  alert: "Alert",
-  focused: "Focused",
-  guarded: "Guarded",
-  stern: "Stern",
-  tired: "Tired",
-  sad: "Sad",
-  angry: "Angry",
+  neutral: "Neutral", warm: "Warm",    playful: "Playful", curious: "Curious",
+  alert:   "Alert",   focused: "Focused", guarded: "Guarded", stern: "Stern",
+  tired:   "Tired",   sad: "Sad",      angry: "Angry",
 };
 
 export function normalizeId(value) {
@@ -111,25 +67,21 @@ export function expressionPartsForStance(stanceId) {
   return structuredClone(STANCE_EXPRESSIONS[normalized] ?? STANCE_EXPRESSIONS.neutral);
 }
 
+// Mirrors Rust's select_frames() in avatar.rs exactly.
+// Each call returns the frame at tickCount % frames.length.
 export function resolveAvatarPartsForState({
   stance,
   listenState = "Idle",
-  speakState = "Idle",
-  tickCount = 0,
+  speakState  = "Idle",
+  tickCount   = 0,
 }) {
-  const normalized = normalizeId(stance ?? "neutral");
-  const phase = tickCount % 12;
-  const base = expressionPartsForStance(normalized);
+  const id       = normalizeId(stance ?? "neutral");
+  const anim     = ANIMATIONS[id] ?? ANIMATIONS.neutral;
+  const speaking  = speakState === "Speaking";
+  const listening = listenState !== "Idle";
 
-  if (speakState === "Speaking") {
-    return speakingAnimationForStance(normalized, phase, base);
-  }
-
-  if (listenState !== "Idle") {
-    return listenAnimationForStance(normalized, listenState, phase, base);
-  }
-
-  return idleAnimationForStance(normalized, phase, base);
+  const frames = speaking ? anim.SPEAKING : listening ? anim.LISTENING : anim.IDLE;
+  return frames[tickCount % frames.length];
 }
 
 export function layerAssetNames(parts) {
@@ -139,173 +91,4 @@ export function layerAssetNames(parts) {
     `eyes/${parts.eyes}.png`,
     `mouth/${parts.mouth}.png`,
   ];
-}
-
-function idleAnimationForStance(stanceId, phase, base) {
-  switch (stanceId) {
-    case "neutral":
-      return { ...base, eyes: phase === 8 ? "eyes_soft_closed" : "eyes_open_blush" };
-    case "warm":
-      return {
-        ...base,
-        eyes: phase === 8 ? "eyes_soft_closed" : "eyes_open_rose",
-        mouth: "mouth_soft_smile",
-      };
-    case "playful":
-      return {
-        ...base,
-        eyes: phase === 9 || phase === 10 ? "eyes_happy_closed" : "eyes_excited_squint",
-        mouth: phase < 3 ? "mouth_wavy_cat" : phase < 6 ? "mouth_cat_smile" : phase < 9 ? "mouth_open_tongue" : "mouth_wavy_cat",
-      };
-    case "curious":
-      return {
-        ...base,
-        eyes: phase === 8 ? "eyes_soft_closed" : "eyes_open_rose",
-        mouth: "mouth_tiny_triangle",
-      };
-    case "alert":
-      return {
-        ...base,
-        eyes: phase === 5 ? "eyes_half_open_blush" : "eyes_open_rose",
-        mouth: "mouth_tiny_triangle",
-      };
-    case "focused":
-      return {
-        ...base,
-        eyes: phase === 8 ? "eyes_soft_closed" : "eyes_half_open_blush",
-        mouth: "mouth_flat_neutral",
-      };
-    case "guarded":
-      return { ...base, eyes: "eyes_worried_angled", mouth: "mouth_small_frown" };
-    case "stern":
-      return { ...base, eyes: "eyes_serious_angry", mouth: "mouth_chevron_serious" };
-    case "tired":
-      return { ...base, eyes: "eyes_sleepy_flat", mouth: "mouth_flat_neutral" };
-    case "sad":
-      return { ...base, eyes: "eyes_teary", mouth: "mouth_small_frown" };
-    case "angry":
-      return {
-        ...base,
-        eyes: "eyes_serious_angry",
-        mouth: "mouth_pout_loop",
-      };
-    default:
-      return base;
-  }
-}
-
-function listenAnimationForStance(stanceId, listenState, phase, base) {
-  const idle = idleAnimationForStance(stanceId, phase, base);
-  let eyes = idle.eyes;
-  if (listenState === "Debouncing") {
-    switch (stanceId) {
-      case "warm":
-      case "curious":
-      case "alert":
-        eyes = "eyes_half_open_rose";
-        break;
-      case "playful":
-        eyes = phase % 2 === 0 ? "eyes_excited_squint" : "eyes_happy_closed";
-        break;
-      case "focused":
-      case "neutral":
-      case "tired":
-        eyes = "eyes_half_open_blush";
-        break;
-      case "guarded":
-        eyes = "eyes_worried_angled";
-        break;
-      case "stern":
-      case "angry":
-        eyes = "eyes_serious_angry";
-        break;
-      case "sad":
-        eyes = "eyes_teary";
-        break;
-    }
-  } else if (listenState !== "Idle") {
-    switch (stanceId) {
-      case "neutral":
-        eyes = phase % 6 === 0 ? "eyes_half_open_blush" : "eyes_open_blush";
-        break;
-      case "warm":
-      case "curious":
-      case "alert":
-        eyes = phase % 4 === 0 ? "eyes_half_open_rose" : "eyes_open_rose";
-        break;
-      case "playful":
-        eyes = phase % 4 < 2 ? "eyes_excited_squint" : "eyes_happy_closed";
-        break;
-      case "focused":
-        eyes = "eyes_half_open_blush";
-        break;
-      case "guarded":
-        eyes = "eyes_worried_angled";
-        break;
-      case "stern":
-      case "angry":
-        eyes = "eyes_serious_angry";
-        break;
-      case "tired":
-        eyes = "eyes_sleepy_flat";
-        break;
-      case "sad":
-        eyes = "eyes_teary";
-        break;
-    }
-  }
-  let ears = idle.ears;
-  if (!["Idle"].includes(listenState) && !["warm", "playful", "tired", "sad"].includes(stanceId)) {
-    ears = "ears_style_sharp";
-  }
-  return { ...idle, eyes, ears };
-}
-
-function speakingAnimationForStance(stanceId, phase, base) {
-  const idle = idleAnimationForStance(stanceId, phase, base);
-  let eyes = idle.eyes;
-  if (stanceId === "playful") {
-    eyes = phase < 6 ? "eyes_excited_squint" : "eyes_happy_closed";
-  } else if (stanceId === "warm") {
-    eyes = phase === 5 ? "eyes_happy_closed" : "eyes_half_open_rose";
-  }
-
-  let mouth;
-  switch (stanceId) {
-    case "warm":
-      eyes = phase === 5 ? "eyes_happy_closed" : "eyes_open_rose";
-      mouth = phase < 3 || (phase >= 6 && phase < 9) ? "mouth_soft_smile" : "mouth_open_flat";
-      break;
-    case "playful":
-      eyes = phase === 9 || phase === 10 ? "eyes_happy_closed" : "eyes_excited_squint";
-      mouth = phase < 3 ? "mouth_wavy_cat" : phase < 6 ? "mouth_open_tongue" : phase < 9 ? "mouth_cat_smile" : "mouth_open_flat";
-      break;
-    case "curious":
-    case "alert":
-      mouth = phase < 6 ? "mouth_tiny_triangle" : "mouth_open_flat";
-      break;
-    case "focused":
-    case "neutral":
-      mouth = phase < 6 ? "mouth_flat_neutral" : "mouth_open_flat";
-      break;
-    case "tired":
-      mouth = phase < 9 ? "mouth_flat_neutral" : "mouth_open_flat";
-      break;
-    case "guarded":
-      mouth = phase < 6 || phase >= 9 ? "mouth_small_frown" : "mouth_tiny_triangle";
-      break;
-    case "sad":
-      mouth = phase < 6 || phase >= 9 ? "mouth_small_frown" : "mouth_open_flat";
-      break;
-    case "stern":
-      mouth = phase < 5 || (phase >= 7 && phase < 11) ? "mouth_chevron_serious" : "mouth_tiny_triangle";
-      break;
-    case "angry":
-      mouth = phase < 4 || (phase >= 7 && phase < 10) ? "mouth_pout_loop" : "mouth_open_flat";
-      break;
-    default:
-      mouth = "mouth_open_flat";
-      break;
-  }
-  return { ...idle, eyes, mouth };
 }
